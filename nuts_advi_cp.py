@@ -52,7 +52,7 @@ def nuts_advi(X, y, ofp, y_dist, opt, test_size=0.33):
             # Calcuate mean from the normal variables, and add intercept
             mux = pm.math.dot(X_tensor,βx) + β0x
 
-            y_likelihood = pm.Beta('fMSE', alpha=np.abs(mu), beta=np.abs(mux), observed=y_tensor)
+            y_likelihood = pm.Beta('fMSE', alpha=np.abs(mu)+1/1e10, beta=np.abs(mux)+1/1e10, observed=y_tensor)
         #start = pm.find_MAP()
 
     #pm.model_to_graphviz(base_model)
@@ -61,7 +61,7 @@ def nuts_advi(X, y, ofp, y_dist, opt, test_size=0.33):
         with base_model:
         # Variational inference with ADVI optimization
             step       = pm.NUTS(target_accept=0.95)
-            trace_nuts = pm.sample(draws=4000, step=step, tune=1000, cores=4)
+            trace_nuts = pm.sample(draws=4000, step=step, tune=1000, cores=4, init='adapt_diag')
             idata_nuts = az.from_pymc3(trace_nuts)
 
         filename = ofp + '_nuts.out'
