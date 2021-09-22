@@ -55,6 +55,8 @@ def nuts_advi(X, y, ofp, y_dist, opt, test_size=0.33):
             y_likelihood = pm.Beta('fMSE', alpha=np.abs(mu), beta=np.abs(mux), observed=y_tensor)
         #start = pm.find_MAP()
 
+    #pm.model_to_graphviz(base_model)
+    
     if opt == 'nuts':
         with base_model:
         # Variational inference with ADVI optimization
@@ -62,7 +64,7 @@ def nuts_advi(X, y, ofp, y_dist, opt, test_size=0.33):
             trace_nuts = pm.sample(draws=4000, step=step, tune=1000, cores=4)
             idata_nuts = az.from_pymc3(trace_nuts)
 
-        filename = ofp 
+        filename = ofp + '_nuts.out'
         my_shelf = shelve.open(filename, 'n')
         my_shelf['base_model'] = base_model
         my_shelf['trace_nuts'] = trace_nuts
@@ -83,7 +85,7 @@ def nuts_advi(X, y, ofp, y_dist, opt, test_size=0.33):
         
         trace_advi = fit_advi.sample(10000)
        
-        filename = ofp
+        filename = ofp + '_advi.out'
         my_shelf = shelve.open(filename, 'n')
         my_shelf['base_model'] = base_model
         my_shelf['fit_advi']   = fit_advi
@@ -97,7 +99,7 @@ def nuts_advi(X, y, ofp, y_dist, opt, test_size=0.33):
         my_shelf.close()
 
 ## ==== data load ==== ##
-# 1 load the data sets
+# load the data sets
 pr_file   = "/home/hyung/Lab/data/DL_Error/predictors.csv"
 res_file  = "/home/hyung/Lab/data/DL_Error/responses.csv"
 pr_data   = pd.read_csv(pr_file)
@@ -105,25 +107,25 @@ res_data  = pd.read_csv(res_file)
 
 # Rainf_f/Precip/SWdown_min have some issue because they are all zeros
 pr_data.drop(columns=['Rainf_min', 'Rainf_f_min', 'Rainf_f_max','Rainf_f_tavg', 'TotalPrecip_min'], inplace=True)
-pr_data.drop(columns=['Evap_min', 'Evap_max', 'Evap_tavg'], inplace=True)       
+pr_data.drop(columns=['Evap_min', 'Evap_max', 'Evap_tavg'], inplace=True)
 pr_data.drop(columns=['LWdown_f_max', 'LWdown_f_min', 'LWdown_f_tavg'], inplace=True)
-pr_data.drop(columns=['Qair_f_max', 'Qair_f_min', 'Qh_max', 'Qh_min'], inplace=True)
-pr_data.drop(columns=['Qle_min', 'Qle_max', 'Qle_tavg'], inplace=True)          
+pr_data.drop(columns=['Qair_f_max',	'Qair_f_min', 'Qh_max',	'Qh_min'], inplace=True)
+pr_data.drop(columns=['Qle_min', 'Qle_max', 'Qle_tavg'], inplace=True)
 pr_data.drop(columns=['SWdown_f_min', 'SWdown_f_max', 'SWdown_f_tavg'], inplace=True)
-pr_data.drop(columns=['SMOS_RFI_min', 'SoilMoist_max', 'SoilMoist_min', 'SoilMoist_tavg'], inplace=True)
+pr_data.drop(columns=['SMOS_RFI_min', 'SoilMoist_max', 'SoilMoist_min',	'SoilMoist_tavg'], inplace=True)
 pr_data.drop(columns=['Tair_f_max', 'Tair_f_min', 'Tair_f_tavg', 'aspect'], inplace=True)
-pr_data.drop(columns=['Wind_f_max', 'Wind_f_min', 'Wind_f_tavg'], inplace=True) 
+pr_data.drop(columns=['Wind_f_max',	'Wind_f_min', 'Wind_f_tavg'], inplace=True)
 pr_data.drop(columns=['LAI_min', 'LAI_max','Greenness_min', 'Greenness_max', 'AvgSurfT_min', 'AvgSurfT_max'],inplace=True)
 pr_data.drop(columns=['SoilTemp_min', 'SoilTemp_max','RadT_min', 'RadT_max'],inplace=True)
 pr_data.drop(columns=['SMAP_vo_min', 'SMAP_vo_max','SMAP_rc_min', 'SMAP_rc_max'],inplace=True)
 pr_data.drop(columns=['albedo_max', 'albedo_min','albedo_std', 'TotalPrecip_max','Rainf_max','SMOS_RFI_max'],inplace=True)
-                    
+
 # TC estimations with std value larger than 0.2 might be unstable
 std_thred     = 0.1
-mask_std_A2   = (res_data['AMSR2_std'] <= std_thred) & (pr_data.ltype!=21) & (pr_data.ltype!=17)
-mask_std_AS   = (res_data['ASCAT_std'] <= std_thred) & (pr_data.ltype!=21) & (pr_data.ltype!=17)
-mask_std_SMOS = (res_data['SMOS_std'] <= std_thred) & (pr_data.ltype!=21) & (pr_data.ltype!=17)
-mask_std_SMAP = (res_data['SMAP_std'] <= std_thred) & (pr_data.ltype!=21) & (pr_data.ltype!=17)
+mask_std_A2   = res_data['AMSR2_std'] <= std_thred
+mask_std_AS   = res_data['ASCAT_std'] <= std_thred
+mask_std_SMOS = res_data['SMOS_std'] <= std_thred
+mask_std_SMAP = res_data['SMAP_std'] <= std_thred
 
 # 2 clean the data sets
 selected_predictors = list(pr_data.columns.values)
@@ -147,7 +149,7 @@ A2_fMSE   = A2_fMSE[mask_std_A2]
 AS_fMSE   = AS_fMSE[mask_std_AS]
 SMOS_fMSE = SMOS_fMSE[mask_std_SMOS]
 SMAP_fMSE = SMAP_fMSE[mask_std_SMAP]
-
+                      
 # drop N/A
 A2_fMSE.dropna(axis=0, how='any', inplace=True)
 AS_fMSE.dropna(axis=0, how='any', inplace=True)
@@ -213,10 +215,10 @@ dist = str(input('Distribution?'))
 test_size = 0.33
 ofp = '/home/hyung/Lab/libs/python/DL_Error_data/'+product+'_ywos_cp_'+method+'_'+dist
 if product == 'SMAP':
-    nuts_advi(SMAP_num_scaled, SMAP_y_scaled, ofp, dist, method, test_size)
+    nuts_advi(SMAP_num_scaled, SMAP_y.values, ofp, dist, method, test_size)
 elif product == 'SMOS':
-    nuts_advi(SMOS_num_scaled, SMOS_y_scaled, ofp, dist, method, test_size)
+    nuts_advi(SMOS_num_scaled, SMOS_y.values, ofp, dist, method, test_size)
 elif product == 'ASCAT':
-    nuts_advi(AS_num_scaled, AS_y_scaled, ofp, dist, method, test_size)
+    nuts_advi(AS_num_scaled, AS_y.values, ofp, dist, method, test_size)
 elif product == 'AMSR2':
-    nuts_advi(A2_num_scaled, A2_y_scaled, ofp, dist, method, test_size)
+    nuts_advi(A2_num_scaled, A2_y.values, ofp, dist, method, test_size)
