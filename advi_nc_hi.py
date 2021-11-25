@@ -244,7 +244,7 @@ with pm.Model() as hi_model:
             exec('bx'+str(i)+'=pm.Deterministic(\''+all_predictors[i-1]+'x\', mu_bx'+str(i)+'+bx'+str(i)+'_offset*sigma_bx'+str(i)+')')
             
         # Model
-        mux_init = 'mux = a[Rclass]'
+        mux_init = 'mux = ax[Rclass]'
         for i in range(1,nop+1):
             mux_init = mux_init+'+bx'+str(i)+'[Rclass]*X[:,'+str(i-1)+']'
         exec(mux_init)
@@ -272,4 +272,6 @@ myshelf['X_train'] = X_train
 myshelf['X_test'] = X_test
 myshelf['y_train'] = y_train
 myshelf['y_test'] = y_test
+myshelf['nRclasses'] = nRclasses
+myshelf['Rclass_test'] = Rclass_test 
 
